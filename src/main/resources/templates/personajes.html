@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personajes de Los Simpson</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Akbar&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #FFD90F;
+            font-family: 'Akbar', cursive;
+            color: #333;
+        }
+        .card {
+            background: linear-gradient(135deg, #FFFFFF 70%, #FFF3B0 100%);
+            border: 5px solid #000;
+            border-radius: 20px;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 280px;
+            margin: 20px auto;
+            padding: 15px;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 12px 12px 0 rgba(0, 0, 0, 0.4);
+        }
+        .card-img-top {
+            border-radius: 15px 15px 0 0;
+            object-fit: cover;
+            height: 250px;
+            width: 100%;
+            border-bottom: 3px solid #FF4500;
+        }
+        .card-title {
+            color: #FF4500;
+            text-shadow: 2px 2px #000;
+            font-size: 1.8rem;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .card-text {
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: #333;
+            margin: 5px 0;
+        }
+        .card-text b {
+            color: #FF4500;
+        }
+        /* Enhanced filter section */
+        .filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .filter-section input, .filter-section select {
+            background: #FFF;
+            border: 4px solid #000;
+            border-radius: 10px;
+            padding: 8px 15px;
+            font-size: 1.1rem;
+            color: #333;
+            transition: border-color 0.3s ease;
+        }
+        .filter-section input:focus, .filter-section select:focus {
+            border-color: #FF4500;
+            outline: none;
+        }
+        .pagination-btn:disabled {
+            background-color: #FFB6A8;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div class="container mx-auto p-4">
+    <h1 class="text-4xl md:text-6xl font-bold text-sky-700 drop-shadow-[2px_2px_#000] mb-6 text-center">
+        Personajes de los Simpson
+    </h1>
+
+    <!-- Search and Filters -->
+    <div class="filter-section">
+        <input id="buscar-personaje" type="text" placeholder="Nombre del personaje..." class="bg-white text-sky-700 focus:outline-none w-full sm:w-64">
+        <select id="filtro-genero" class="text-sky-700 focus:outline-none">
+            <option value="todos">Todos</option>
+            <option value="Masculino">Masculino</option>
+            <option value="Femenino">Femenino</option>
+        </select>
+        <select id="filtro-estado" class="text-sky-700 focus:outline-none">
+            <option value="todos">Todos</option>
+            <option value="Vivo">Vivo</option>
+            <option value="Muerto">Muerto</option>
+        </select>
+    </div>
+
+    <!-- Personajes Grid -->
+    <div id="personajes-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Thymeleaf renderiza los personajes -->
+        <div class="bg-white border-4 border-black rounded-xl shadow-lg p-6 transform hover:scale-105 transition-transform" th:each="p : ${personajes}"
+             th:data-nombre="${p.nombre}" th:data-genero="${p.genero}" th:data-estado="${p.estado}" >
+            <img th:src="${p.imagen}" th:alt="${p.nombre}" class="w-auto h-72 mx-auto rounded">
+            <hr/>
+            <h2 class="card-title" th:text="${p.nombre}"></h2>
+            <p class="card-text"><b>Género:</b> <span th:text="${p.genero}"></span></p>
+            <p class="card-text"><b>Estado:</b> <span th:text="${p.estado}"></span></p>
+            <p class="card-text"><b>Ocupación:</b> <span th:text="${p.ocupacion}"></span></p>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center items-center gap-4 mt-6">
+        <button id="btn-anterior-personajes" class="bg-orange-600 text-white border-4 border-black px-6 py-3 text-lg rounded-xl hover:bg-orange-700 transition-transform hover:scale-105 flex items-center gap-2">Anterior</button>
+        <span id="pagina-actual-personajes">Página 1</span>
+        <button id="btn-siguiente-personajes" class="bg-orange-600 text-white border-4 border-black px-6 py-3 text-lg rounded-xl hover:bg-orange-700 transition-transform hover:scale-105 flex items-center gap-2">Siguiente</button>
+    </div>
+</div>
+
+<script>
+    const container = document.getElementById('personajes-container');
+    const buscarInput = document.getElementById('buscar-personaje');
+    const generoSelect = document.getElementById('filtro-genero');
+    const estadoSelect = document.getElementById('filtro-estado');
+    const btnAnterior = document.getElementById('btn-anterior-personajes');
+    const btnSiguiente = document.getElementById('btn-siguiente-personajes');
+    const paginaSpan = document.getElementById('pagina-actual-personajes');
+
+    let personajes = Array.from(container.children);
+    let filteredPersonajes = personajes.slice();
+    let currentPage = 1;
+    const itemsPerPage = 9;
+
+    function renderPersonajes() {
+        container.innerHTML = '';
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginated = filteredPersonajes.slice(start, end);
+
+        paginated.forEach(card => container.appendChild(card));
+
+        const totalPages = Math.ceil(filteredPersonajes.length / itemsPerPage);
+        btnAnterior.disabled = currentPage === 1;
+        btnSiguiente.disabled = currentPage === totalPages || totalPages === 0;
+        paginaSpan.textContent = `Página ${currentPage} de ${totalPages || 1}`;
+    }
+
+    function applyFilters() {
+        const search = buscarInput.value.toLowerCase();
+        const genero = generoSelect.value;
+        const estado = estadoSelect.value;
+
+        filteredPersonajes = personajes.filter(card => {
+            const nombre = card.dataset.nombre.toLowerCase();
+            const gen = card.dataset.genero;
+            const est = card.dataset.estado;
+            return nombre.includes(search) && (genero === 'todos' || gen === genero) && (estado === 'todos' || est === estado);
+        });
+
+        currentPage = 1;
+        renderPersonajes();
+    }
+
+    buscarInput.addEventListener('input', applyFilters);
+    generoSelect.addEventListener('change', applyFilters);
+    estadoSelect.addEventListener('change', applyFilters);
+
+    btnAnterior.addEventListener('click', () => {
+        if (currentPage > 1) currentPage--;
+        renderPersonajes();
+    });
+
+    btnSiguiente.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredPersonajes.length / itemsPerPage);
+        if (currentPage < totalPages) currentPage++;
+        renderPersonajes();
+    });
+
+    renderPersonajes();
+</script>
+</body>
+</html>
