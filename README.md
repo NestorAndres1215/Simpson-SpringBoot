@@ -1,6 +1,7 @@
 # Proyecto Spring Boot - API de Los Simpson
 
-![Los Simpson](<img width="1675" height="772" alt="image" src="https://github.com/user-attachments/assets/36822dd3-bcf2-4f3a-8f25-d8376b904793" />)
+<img width="1675" height="772" alt="image" src="https://github.com/user-attachments/assets/fa243853-7c1e-4a48-9c7a-62b7249e6d81" />
+
 
 ## Descripción
 
